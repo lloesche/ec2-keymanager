@@ -20,13 +20,15 @@ def main(argv):
         logging.getLogger('__main__').setLevel(logging.DEBUG)
 
     km = KeyManager(args)
-    km.replace()
+    km.run()
 
 
 class KeyManager:
     def __init__(self, args):
         self.args = args
         self.log = logging.getLogger(self.__class__.__name__)
+        logging.getLogger(self.__class__.__name__).setLevel(logging.INFO)
+
         if self.args.verbose:
             logging.getLogger(self.__class__.__name__).setLevel(logging.DEBUG)
 
@@ -39,7 +41,6 @@ class KeyManager:
 
         if not self.args.region:
             self.log.info('Region not specified, assuming all regions')
-            self.get_confirmation()
             self.regions = self.all_regions()
         else:
             self.regions = args.region
@@ -51,9 +52,10 @@ class KeyManager:
                        default=None)
         p.add_argument('--region', '-r', help='AWS Region (default: all)', dest='region', type=str, default=None,
                        nargs='+')
-        p.add_argument('--name', '-n', help='Key Name', dest='key_name', type=str, default=None, required=True)
+        g = p.add_mutually_exclusive_group(required=True)
+        g.add_argument('--name', '-n', help='Key Name', dest='key_name', type=str, default=None)
         p.add_argument('--file', '-f', help='Key File', dest='key_file', type=str, default=None)
-        p.add_argument('--list', '-l', help='List Keys', dest='list', action='store_true', default=False)
+        g.add_argument('--list', '-l', help='List Keys', dest='list', action='store_true', default=False)
         p.add_argument('--yes', '-y', help='Assume YES to all questions', dest='yes', action='store_true',
                        default=False)
         return p
@@ -61,9 +63,13 @@ class KeyManager:
     def list_keys(self):
         session = boto3.session.Session(aws_access_key_id=self.args.access_key_id,
                                         aws_secret_access_key=self.args.secret_access_key)
-        ec2 = session.client('ec2', region_name='us-west-2')
-        regions = ec2.describe_regions()
-        pprint(regions)
+        for region in self.regions:
+            self.log.debug("Retrieving keys in region '{}'".format(region))
+            ec2 = session.client('ec2', region_name=region)
+            key_pairs = ec2.describe_key_pairs()
+            print("Region {}".format(region))
+            for k in key_pairs['KeyPairs']:
+                print("\t{} (fingerprint: {})".format(k['KeyName'], k['KeyFingerprint']))
 
     def all_regions(self):
         session = boto3.session.Session(aws_access_key_id=self.args.access_key_id,
@@ -139,6 +145,11 @@ class KeyManager:
         choice = input().lower()
         return choice.startswith('y')
 
+    def run(self):
+        if self.args.list:
+            self.list_keys()
+        else:
+            self.replace()
 
 if __name__ == "__main__":
     main(sys.argv[1:])
