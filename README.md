@@ -12,7 +12,7 @@ usage: keymanager.py [-h] [--verbose] [--access-key-id ACCESS_KEY_ID]
                      [--region REGION [REGION ...]] --name KEY_NAME
                      [--file KEY_FILE] [--list] [--yes]
 
-Generate AWS IAM User Report
+Manage EC2 ssh keys
 
 optional arguments:
   -h, --help            show this help message and exit

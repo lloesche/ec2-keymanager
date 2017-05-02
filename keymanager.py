@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 
 def main(argv):
-    p = argparse.ArgumentParser(description='Generate AWS IAM User Report')
+    p = argparse.ArgumentParser(description='Manage EC2 ssh keys')
     p.add_argument('--verbose', '-v', help='Verbose logging', dest='verbose', action='store_true', default=False)
     p = KeyManager.set_args(p)
     args = p.parse_args(argv)
